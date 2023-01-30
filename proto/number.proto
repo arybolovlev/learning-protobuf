@@ -1,0 +1,18 @@
+syntax="proto3";
+
+package number;
+
+option go_package = "github.com/arybolovlev/learning-protobuf/proto";
+
+message NumberRequest {
+      int32 number = 1;
+}
+
+message NumberResponse {
+      int32 number = 1;
+      int32 old_number = 2;
+}
+
+service Number {
+      rpc IncreseNumber(NumberRequest) returns (NumberResponse);
+}
