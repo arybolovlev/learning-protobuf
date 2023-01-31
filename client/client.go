@@ -5,6 +5,8 @@ import (
 	"flag"
 	"io"
 	"log"
+	"math/rand"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -26,7 +28,8 @@ func main() {
 	defer conn.Close()
 	c := pb.NewNumberClient(conn)
 
-	req := &pb.SubscribeRequest{EventId: 2}
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	req := &pb.SubscribeRequest{EventId: int32(r.Int())}
 	serverStream, err := c.Subscribe(context.Background(), req)
 	if err != nil {
 		log.Fatal("could not stream")
