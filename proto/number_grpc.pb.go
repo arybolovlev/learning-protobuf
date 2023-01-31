@@ -22,7 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NumberClient interface {
-	IncreseNumber(ctx context.Context, in *NumberRequest, opts ...grpc.CallOption) (*NumberResponse, error)
+	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Number_SubscribeClient, error)
+	Unsubscribe(ctx context.Context, in *UnsubscribeRequest, opts ...grpc.CallOption) (*UnsubscribeResponse, error)
 }
 
 type numberClient struct {
@@ -33,9 +34,41 @@ func NewNumberClient(cc grpc.ClientConnInterface) NumberClient {
 	return &numberClient{cc}
 }
 
-func (c *numberClient) IncreseNumber(ctx context.Context, in *NumberRequest, opts ...grpc.CallOption) (*NumberResponse, error) {
-	out := new(NumberResponse)
-	err := c.cc.Invoke(ctx, "/number.Number/IncreseNumber", in, out, opts...)
+func (c *numberClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Number_SubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Number_ServiceDesc.Streams[0], "/number.Number/Subscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &numberSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Number_SubscribeClient interface {
+	Recv() (*SubscribeResponse, error)
+	grpc.ClientStream
+}
+
+type numberSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *numberSubscribeClient) Recv() (*SubscribeResponse, error) {
+	m := new(SubscribeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *numberClient) Unsubscribe(ctx context.Context, in *UnsubscribeRequest, opts ...grpc.CallOption) (*UnsubscribeResponse, error) {
+	out := new(UnsubscribeResponse)
+	err := c.cc.Invoke(ctx, "/number.Number/Unsubscribe", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +79,8 @@ func (c *numberClient) IncreseNumber(ctx context.Context, in *NumberRequest, opt
 // All implementations must embed UnimplementedNumberServer
 // for forward compatibility
 type NumberServer interface {
-	IncreseNumber(context.Context, *NumberRequest) (*NumberResponse, error)
+	Subscribe(*SubscribeRequest, Number_SubscribeServer) error
+	Unsubscribe(context.Context, *UnsubscribeRequest) (*UnsubscribeResponse, error)
 	mustEmbedUnimplementedNumberServer()
 }
 
@@ -54,8 +88,11 @@ type NumberServer interface {
 type UnimplementedNumberServer struct {
 }
 
-func (UnimplementedNumberServer) IncreseNumber(context.Context, *NumberRequest) (*NumberResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IncreseNumber not implemented")
+func (UnimplementedNumberServer) Subscribe(*SubscribeRequest, Number_SubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
+}
+func (UnimplementedNumberServer) Unsubscribe(context.Context, *UnsubscribeRequest) (*UnsubscribeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unsubscribe not implemented")
 }
 func (UnimplementedNumberServer) mustEmbedUnimplementedNumberServer() {}
 
@@ -70,20 +107,41 @@ func RegisterNumberServer(s grpc.ServiceRegistrar, srv NumberServer) {
 	s.RegisterService(&Number_ServiceDesc, srv)
 }
 
-func _Number_IncreseNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NumberRequest)
+func _Number_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NumberServer).Subscribe(m, &numberSubscribeServer{stream})
+}
+
+type Number_SubscribeServer interface {
+	Send(*SubscribeResponse) error
+	grpc.ServerStream
+}
+
+type numberSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *numberSubscribeServer) Send(m *SubscribeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Number_Unsubscribe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubscribeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NumberServer).IncreseNumber(ctx, in)
+		return srv.(NumberServer).Unsubscribe(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/number.Number/IncreseNumber",
+		FullMethod: "/number.Number/Unsubscribe",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NumberServer).IncreseNumber(ctx, req.(*NumberRequest))
+		return srv.(NumberServer).Unsubscribe(ctx, req.(*UnsubscribeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,10 +154,16 @@ var Number_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*NumberServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "IncreseNumber",
-			Handler:    _Number_IncreseNumber_Handler,
+			MethodName: "Unsubscribe",
+			Handler:    _Number_Unsubscribe_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Subscribe",
+			Handler:       _Number_Subscribe_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "number.proto",
 }

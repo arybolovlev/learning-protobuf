@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"log"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -26,13 +26,32 @@ func main() {
 	defer conn.Close()
 	c := pb.NewNumberClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	i, err := c.IncreseNumber(ctx, &pb.NumberRequest{Number: 4})
+	req := &pb.SubscribeRequest{EventId: 2}
+	serverStream, err := c.Subscribe(context.Background(), req)
 	if err != nil {
-		log.Fatalf("could not increase the number: %v", err)
+		log.Fatal("could not stream")
 	}
-	log.Printf("New number value: %v", i.Number)
-	log.Printf("Old number value: %v", i.OldNumber)
+
+	counter := 0
+
+	for {
+		resp, err := serverStream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		log.Printf("Response [%v] - %v\n", resp.Id, resp.EventId)
+
+		counter++
+		if counter == 5 {
+			r, err := c.Unsubscribe(context.Background(), &pb.UnsubscribeRequest{Id: resp.Id})
+			if err != nil {
+				log.Printf("Unsubscribe response error: %v\n", err)
+			}
+			if r.Unsubscribed {
+				log.Printf("Successfully unsubscribed client ID %v", resp.Id)
+				break
+			}
+		}
+	}
 }

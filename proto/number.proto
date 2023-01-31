@@ -4,15 +4,24 @@ package number;
 
 option go_package = "github.com/arybolovlev/learning-protobuf/proto";
 
-message NumberRequest {
-      int32 number = 1;
+message SubscribeRequest {
+      int32 event_id = 1;
 }
 
-message NumberResponse {
-      int32 number = 1;
-      int32 old_number = 2;
+message SubscribeResponse {
+      string id = 1;
+      int32 event_id = 2;
+}
+
+message UnsubscribeRequest {
+      string id = 1;
+}
+
+message UnsubscribeResponse {
+      bool unsubscribed = 1;
 }
 
 service Number {
-      rpc IncreseNumber(NumberRequest) returns (NumberResponse);
+      rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+      rpc Unsubscribe(UnsubscribeRequest) returns (UnsubscribeResponse);
 }
