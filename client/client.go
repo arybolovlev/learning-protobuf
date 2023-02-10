@@ -29,7 +29,7 @@ func main() {
 	c := pb.NewNumberClient(conn)
 
 	rand.Seed(time.Now().UnixNano())
-	req := &pb.SubscribeRequest{EventId: int32(rand.Int())}
+	req := &pb.SubscribeRequest{EventId: int32(rand.Int31())}
 	serverStream, err := c.Subscribe(context.Background(), req)
 	if err != nil {
 		log.Fatal("could not stream")
