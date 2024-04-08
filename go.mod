@@ -3,15 +3,14 @@ module github.com/arybolovlev/learning-protobuf
 go 1.19
 
 require (
-	github.com/google/uuid v1.3.0
-	google.golang.org/grpc v1.56.3
-	google.golang.org/protobuf v1.30.0
+	github.com/google/uuid v1.6.0
+	google.golang.org/grpc v1.63.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
-	github.com/golang/protobuf v1.5.3 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 )
