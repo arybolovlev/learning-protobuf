@@ -1,0 +1,19 @@
+name: Dependabot PR
+
+on:
+  # https://github.com/dependabot/dependabot-core/issues/3253#issuecomment-852541544
+  pull_request_target:
+    branches:
+      - '**'
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  dependabot:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependabot
+        run: |
+          echo "Hello Dependabot!"
