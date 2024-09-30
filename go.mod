@@ -3,7 +3,7 @@ module github.com/arybolovlev/learning-protobuf
 go 1.19
 
 require (
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0
 )
